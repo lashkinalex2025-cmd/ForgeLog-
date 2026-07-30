@@ -1,0 +1,262 @@
+================================================================================
+  ForgeLog — инструкция: как загрузить приложение на GitHub
+================================================================================
+
+Путь к проекту на вашем компьютере:
+  C:\Users\User\Desktop\Dnevnik
+
+Ниже — пошаговая инструкция для Windows (PowerShell).
+
+--------------------------------------------------------------------------------
+1. ЧТО НУЖНО ЗАРАНЕЕ
+--------------------------------------------------------------------------------
+
+  1) Аккаунт на GitHub: https://github.com
+  2) Установленный Git: https://git-scm.com/download/win
+     Проверка в PowerShell:
+       git --version
+  3) (Опционально) GitHub CLI: https://cli.github.com
+       gh --version
+
+  Если Git спрашивает имя и email (первый раз):
+       git config --global user.name "Ваше Имя"
+       git config --global user.email "you@example.com"
+
+
+--------------------------------------------------------------------------------
+2. СОЗДАТЬ РЕПОЗИТОРИЙ НА GITHUB (через сайт)
+--------------------------------------------------------------------------------
+
+  1) Откройте https://github.com/new
+  2) Repository name: например  forgelog  (или Dnevnik, ForgeLog)
+  3) Description: Offline-first PWA nutrition & workout diary for bodybuilding
+  4) Public (чтобы можно было деплоить на GitHub Pages) или Private
+  5) НЕ ставьте галочки:
+       - Add a README file
+       - Add .gitignore
+       - Choose a license
+     (у проекта уже есть README, .gitignore и LICENSE)
+  6) Нажмите "Create repository"
+  7) Скопируйте URL репозитория, например:
+       https://github.com/ВАШ_ЛОГИН/forgelog.git
+     или SSH:
+       git@github.com:ВАШ_ЛОГИН/forgelog.git
+
+
+--------------------------------------------------------------------------------
+3. ИНИЦИАЛИЗАЦИЯ GIT И ПЕРВЫЙ PUSH (PowerShell)
+--------------------------------------------------------------------------------
+
+  Откройте PowerShell и выполните команды по порядку:
+
+  # перейти в папку проекта
+  cd $env:USERPROFILE\Desktop\Dnevnik
+
+  # (если ещё не ставили зависимости — не обязательно для загрузки на GitHub)
+  # npm.cmd install
+
+  # инициализировать репозиторий
+  git init
+
+  # ветка main (стандарт GitHub)
+  git branch -M main
+
+  # добавить все файлы (node_modules и dist уже в .gitignore — не попадут)
+  git add .
+
+  # первый коммит
+  git commit -m "Initial commit: ForgeLog PWA"
+
+  # привязать удалённый репозиторий (подставьте СВОЙ URL)
+  git remote add origin https://github.com/ВАШ_ЛОГИН/forgelog.git
+
+  # отправить код на GitHub
+  git push -u origin main
+
+  При push GitHub попросит войти:
+    - через браузер (Login with browser), или
+    - Personal Access Token вместо пароля:
+      https://github.com/settings/tokens
+      (scopes: repo)
+
+
+--------------------------------------------------------------------------------
+4. АЛЬТЕРНАТИВА: СОЗДАНИЕ РЕПОЗИТОРИЯ ЧЕРЕЗ GitHub CLI
+--------------------------------------------------------------------------------
+
+  cd $env:USERPROFILE\Desktop\Dnevnik
+  git init
+  git branch -M main
+  git add .
+  git commit -m "Initial commit: ForgeLog PWA"
+
+  # войти в GitHub (один раз)
+  gh auth login
+
+  # создать публичный репозиторий и сразу запушить
+  gh repo create forgelog --public --source=. --remote=origin --push
+
+  # или приватный:
+  # gh repo create forgelog --private --source=. --remote=origin --push
+
+
+--------------------------------------------------------------------------------
+5. ЧТО ДОЛЖНО ПОПАСТЬ В РЕПОЗИТОРИЙ / ЧТО НЕТ
+--------------------------------------------------------------------------------
+
+  Попадёт (это нормально):
+    - src/, public/, index.html
+    - package.json, package-lock.json
+    - vite.config.ts, tailwind.config.js, tsconfig*.json
+    - README.md, LICENSE, GITHUB_UPLOAD.txt
+    - scripts/
+
+  НЕ попадёт (из-за .gitignore):
+    - node_modules/
+    - dist/
+    - локальные логи и временные файлы
+
+  На GitHub НЕ нужно загружать node_modules.
+  Любой, кто клонирует репозиторий, установит зависимости так:
+
+    git clone https://github.com/ВАШ_ЛОГИН/forgelog.git
+    cd forgelog
+    npm install
+    npm run dev
+
+
+--------------------------------------------------------------------------------
+6. ПРОВЕРКА ПОСЛЕ ЗАГРУЗКИ
+--------------------------------------------------------------------------------
+
+  1) Откройте страницу репозитория на GitHub
+  2) Убедитесь, что видны README.md, src/, package.json
+  3) Вкладка "Commits" — есть коммит "Initial commit: ForgeLog PWA"
+
+
+--------------------------------------------------------------------------------
+7. ДАЛЬНЕЙШИЕ ИЗМЕНЕНИЯ (обновление кода на GitHub)
+--------------------------------------------------------------------------------
+
+  cd $env:USERPROFILE\Desktop\Dnevnik
+
+  git add .
+  git status
+  git commit -m "Кратко опишите, что изменили"
+  git push
+
+
+--------------------------------------------------------------------------------
+8. (ОПЦИОНАЛЬНО) ДЕПЛОЙ НА GITHUB PAGES
+--------------------------------------------------------------------------------
+
+  Чтобы сайт открывался по адресу:
+    https://ВАШ_ЛОГИН.github.io/forgelog/
+
+  A) Если репозиторий называется НЕ username.github.io, в файле vite.config.ts
+     в defineConfig добавьте base (рядом с plugins):
+
+       base: '/forgelog/',
+
+     (имя после слэшей = имя репозитория)
+
+  B) Соберите проект:
+
+       npm.cmd run build
+
+  C) Вариант вручную (ветка gh-pages):
+     - установите:  npm.cmd install -D gh-pages
+     - в package.json в scripts добавьте:
+         "deploy": "npm run build && gh-pages -d dist"
+     - выполните:  npm.cmd run deploy
+
+  D) В настройках репозитория на GitHub:
+       Settings → Pages → Source: Deploy from a branch
+       Branch: gh-pages, folder: / (root) → Save
+
+  E) Подождите 1–2 минуты и откройте:
+       https://ВАШ_ЛОГИН.github.io/forgelog/
+
+  Важно:
+    - для PWA и Service Worker нужен HTTPS (GitHub Pages даёт HTTPS);
+    - если меняли base, не забудьте снова сделать commit + push исходников.
+
+
+--------------------------------------------------------------------------------
+9. (ОПЦИОНАЛЬНО) ДЕПЛОЙ НА VERCEL / NETLIFY (проще для SPA)
+--------------------------------------------------------------------------------
+
+  Vercel: https://vercel.com
+    - Import Git Repository → выберите forgelog
+    - Framework: Vite
+    - Build Command: npm run build
+    - Output Directory: dist
+    - Deploy
+
+  Netlify: https://netlify.com
+    - Add new site → Import from Git
+    - Build command: npm run build
+    - Publish directory: dist
+    - Для SPA добавьте редирект: /* → /index.html (status 200)
+
+  Подробнее также в README.md проекта.
+
+
+--------------------------------------------------------------------------------
+10. ЛИЦЕНЗИЯ И README
+--------------------------------------------------------------------------------
+
+  В проекте уже есть:
+    - LICENSE  (MIT)
+    - README.md (описание, запуск, деплой)
+
+  На странице репозитория GitHub автоматически покажет README и метку MIT.
+
+
+--------------------------------------------------------------------------------
+11. ЧАСТЫЕ ПРОБЛЕМЫ
+--------------------------------------------------------------------------------
+
+  • "git is not recognized"
+      → установите Git и перезапустите PowerShell
+
+  • "remote origin already exists"
+      → git remote remove origin
+      → затем снова: git remote add origin URL
+
+  • "failed to push... rejected"
+      → если на GitHub уже есть коммиты (README создали на сайте):
+          git pull origin main --rebase
+          git push -u origin main
+      → либо создайте пустой репозиторий без README (рекомендуется)
+
+  • npm.ps1 / ExecutionPolicy на Windows
+      → используйте:  npm.cmd install   /   npm.cmd run build
+
+  • Слишком большой push
+      → убедитесь, что node_modules не добавлен:
+          git status
+        если добавили случайно:
+          git rm -r --cached node_modules
+          git commit -m "Remove node_modules from git"
+
+
+--------------------------------------------------------------------------------
+12. КРАТКИЙ ЧЕКЛИСТ
+--------------------------------------------------------------------------------
+
+  [ ] Установлен Git, настроен user.name / user.email
+  [ ] Создан пустой репозиторий на GitHub (без README)
+  [ ] cd Desktop\Dnevnik
+  [ ] git init && git branch -M main
+  [ ] git add . && git commit -m "Initial commit: ForgeLog PWA"
+  [ ] git remote add origin https://github.com/ВАШ_ЛОГИН/ИМЯ_РЕПО.git
+  [ ] git push -u origin main
+  [ ] Проверена страница репозитория на GitHub
+  [ ] (по желанию) деплой Pages / Vercel / Netlify
+
+
+================================================================================
+  Готово. После push проект доступен в вашем аккаунте GitHub.
+  Локальная папка: C:\Users\User\Desktop\Dnevnik
+================================================================================
