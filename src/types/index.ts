@@ -81,6 +81,8 @@ export interface AppSettings {
   weightIncrement: number
   onboardingDone: boolean
   favoriteFoodIds: string[]
+  /** Applied built-in catalog version; bump to re-seed foods/exercises for existing users */
+  seedVersion?: number
 }
 
 export interface Food {

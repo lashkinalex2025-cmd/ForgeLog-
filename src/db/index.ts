@@ -82,4 +82,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
   weightIncrement: 2.5,
   onboardingDone: false,
   favoriteFoodIds: [],
+  seedVersion: 0,
 }

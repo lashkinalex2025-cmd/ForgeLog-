@@ -944,20 +944,38 @@ function buildRoutines(): Routine[] {
   ]
 }
 
+/** Bump when built-in SEED_FOODS / SEED_EXERCISES catalogs change so existing DBs get updates. */
+export const SEED_VERSION = 2
+
 export async function ensureSeeded(): Promise<void> {
   const settings = await db.settings.get('main')
   if (!settings) {
     await db.settings.put(DEFAULT_SETTINGS)
   }
 
-  const foodCount = await db.foods.count()
-  if (foodCount === 0) {
-    await db.foods.bulkPut(SEED_FOODS)
-  }
+  const current = (await db.settings.get('main'))!
+  const applied = current.seedVersion ?? 0
 
-  const exCount = await db.exercises.count()
-  if (exCount === 0) {
-    await db.exercises.bulkPut(SEED_EXERCISES)
+  // Empty tables (first install) or catalog version bump for existing users.
+  // Custom (user-created) foods/exercises are preserved.
+  if (applied < SEED_VERSION) {
+    const customFoods = await db.foods.filter((f) => f.isCustom).toArray()
+    await db.foods.clear()
+    await db.foods.bulkPut([...SEED_FOODS, ...customFoods])
+
+    const customExercises = await db.exercises.filter((e) => e.isCustom).toArray()
+    await db.exercises.clear()
+    await db.exercises.bulkPut([...SEED_EXERCISES, ...customExercises])
+
+    await db.settings.update('main', { seedVersion: SEED_VERSION })
+  } else {
+    // Safety: if somehow emptied after version stamp, refill built-ins only.
+    if ((await db.foods.count()) === 0) {
+      await db.foods.bulkPut(SEED_FOODS)
+    }
+    if ((await db.exercises.count()) === 0) {
+      await db.exercises.bulkPut(SEED_EXERCISES)
+    }
   }
 
   const routineCount = await db.routines.count()
