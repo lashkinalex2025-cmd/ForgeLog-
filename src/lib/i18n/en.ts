@@ -164,6 +164,13 @@ export const en: TranslationKeys = {
     restTimer: 'Rest timer (sec)',
     weightStep: 'Weight step',
     about: 'About',
+    aboutDeveloper: 'Developer: Alex Lashkin',
+    aboutYear: 'Year developed: 2026',
+    aboutRights: 'All rights reserved.',
+    aboutNutritionDisclaimer:
+      'Nutrition information is provided for reference only and may vary by product, brand, preparation method, and portion size.',
+    aboutMedicalDisclaimer:
+      'This app does not replace advice from a doctor or dietitian.',
     offline: 'All data stays on your device',
     name: 'Name',
     age: 'Age',

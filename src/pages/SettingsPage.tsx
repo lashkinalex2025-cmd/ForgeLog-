@@ -373,6 +373,11 @@ export function SettingsPage() {
           </p>
           <p>MIT License · Offline-first PWA</p>
           <p>React · Vite · Dexie · Zustand · Tailwind</p>
+          <p>{t.settings.aboutDeveloper}</p>
+          <p>{t.settings.aboutYear}</p>
+          <p>{t.settings.aboutRights}</p>
+          <p className="pt-1">{t.settings.aboutNutritionDisclaimer}</p>
+          <p>{t.settings.aboutMedicalDisclaimer}</p>
         </CardContent>
       </Card>
     </div>
