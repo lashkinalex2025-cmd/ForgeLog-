@@ -212,13 +212,18 @@ export function WorkoutPage() {
                 key={e.id}
                 className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-muted"
               >
-                <div>
+                <div className="min-w-0 pr-2">
                   <div className="font-medium text-sm">
                     {settings.locale === 'ru' ? e.name : e.nameEn}
                   </div>
                   <div className="text-xs text-muted-foreground">
                     {t.muscles[e.primaryMuscle]} · {t.equipment[e.equipment]}
                   </div>
+                  {e.instructions && (
+                    <div className="text-xs text-muted-foreground mt-1 leading-snug">
+                      {e.instructions}
+                    </div>
+                  )}
                 </div>
                 {e.isCustom && <Badge variant="outline">custom</Badge>}
               </div>
