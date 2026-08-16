@@ -135,6 +135,11 @@ export const ru = {
     logWeight: 'Записать вес',
     logMeasurements: 'Записать обхваты',
     addPhoto: 'Добавить фото',
+    exportPng: 'Экспорт PNG',
+    exportPdf: 'Экспорт PDF',
+    exporting: 'Экспорт…',
+    exportDone: 'Экспорт готов',
+    exportFailed: 'Не удалось экспортировать',
   },
 
   settings: {

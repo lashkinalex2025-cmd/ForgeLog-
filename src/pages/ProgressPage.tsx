@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Camera, Scale, Ruler } from 'lucide-react'
+import { Camera, FileDown, ImageDown, Scale, Ruler } from 'lucide-react'
 import {
   CartesianGrid,
   Legend,
@@ -43,6 +43,7 @@ import {
   kgToDisplay,
 } from '@/lib/units'
 import { compressImage } from '@/lib/exportImport'
+import { exportElementAsPdf, exportElementAsPng } from '@/lib/exportProgress'
 import { formatShortDate, todayKey, uid } from '@/lib/dates'
 import type { BodyWeight, Measurement, ProgressPhoto, PhotoSide } from '@/types'
 
@@ -89,6 +90,8 @@ export function ProgressPage() {
   const [compareA, setCompareA] = useState<string>('')
   const [compareB, setCompareB] = useState<string>('')
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({})
+  const [exporting, setExporting] = useState(false)
+  const exportRef = useRef<HTMLDivElement>(null)
 
   // Stable key so we only rebuild object URLs when photo set actually changes
   const photoKey = photos.map((p) => p.id).join(',')
@@ -191,12 +194,58 @@ export function ProgressPage() {
     toast({ title: t.progress.addPhoto, variant: 'success' })
   }
 
+  async function handleExport(format: 'png' | 'pdf') {
+    const el = exportRef.current
+    if (!el || exporting) return
+    setExporting(true)
+    try {
+      if (format === 'png') await exportElementAsPng(el)
+      else await exportElementAsPdf(el)
+      toast({ title: t.progress.exportDone, variant: 'success' })
+    } catch {
+      toast({ title: t.progress.exportFailed, variant: 'warning' })
+    } finally {
+      setExporting(false)
+    }
+  }
+
   return (
     <div className="space-y-4 animate-fade-in">
-      <header className="flex items-center justify-between">
+      <header className="flex items-center justify-between gap-2">
         <h1 className="text-2xl font-bold">{t.progress.title}</h1>
+        <div className="flex shrink-0 gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={exporting}
+            onClick={() => handleExport('png')}
+            aria-label={t.progress.exportPng}
+          >
+            <ImageDown className="h-4 w-4" />
+            <span className="hidden sm:inline">
+              {exporting ? t.progress.exporting : t.progress.exportPng}
+            </span>
+            <span className="sm:hidden">PNG</span>
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={exporting}
+            onClick={() => handleExport('pdf')}
+            aria-label={t.progress.exportPdf}
+          >
+            <FileDown className="h-4 w-4" />
+            <span className="hidden sm:inline">
+              {exporting ? t.progress.exporting : t.progress.exportPdf}
+            </span>
+            <span className="sm:hidden">PDF</span>
+          </Button>
+        </div>
       </header>
 
+      <div ref={exportRef} className="space-y-4">
       <div className="grid grid-cols-2 gap-2">
         <Card>
           <CardContent className="pt-4">
@@ -448,6 +497,7 @@ export function ProgressPage() {
           </div>
         </TabsContent>
       </Tabs>
+      </div>
 
       <Dialog open={weightOpen} onOpenChange={setWeightOpen}>
         <DialogContent>

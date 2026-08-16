@@ -137,6 +137,11 @@ export const en: TranslationKeys = {
     logWeight: 'Log weight',
     logMeasurements: 'Log measurements',
     addPhoto: 'Add photo',
+    exportPng: 'Export PNG',
+    exportPdf: 'Export PDF',
+    exporting: 'Exporting…',
+    exportDone: 'Export ready',
+    exportFailed: 'Export failed',
   },
 
   settings: {
