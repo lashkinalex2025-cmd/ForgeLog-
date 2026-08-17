@@ -110,6 +110,8 @@ export const en: TranslationKeys = {
     volume: 'Volume',
     addExercise: 'Add exercise',
     customExercise: 'Custom exercise',
+    technique: 'Technique',
+    noTechnique: 'No technique description yet.',
     noWorkouts: 'No workouts yet',
     templates: 'Templates',
     createRoutine: 'Create routine',

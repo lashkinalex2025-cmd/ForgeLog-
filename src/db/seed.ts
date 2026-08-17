@@ -789,7 +789,8 @@ export const SEED_EXERCISES: Exercise[] = [
   // Forearms
   ex('e-wrist-curl', 'Сгибания запястий', 'Wrist Curl', 'forearms', [], 'barbell',
     'Предплечья на бёдрах или скамье, сгибайте запястья вверх. Медленный негатив.'),
-  ex('e-farmer-walk', 'Прогулка фермера', "Farmer's Walk", 'forearms', ['traps', 'core'], 'dumbbell'),
+  ex('e-farmer-walk', 'Прогулка фермера', "Farmer's Walk", 'forearms', ['traps', 'core'], 'dumbbell',
+    'Тяжёлые гантели/гири в руках, идите короткими шагами. Плечи вниз, корпус прямой, не раскачивайтесь.'),
   ex('e-reverse-curl', 'Обратные сгибания', 'Reverse Curl', 'forearms', ['biceps'], 'barbell',
     'Хват сверху, сгибайте штангу. Локти у корпуса, работают предплечья и бицепс.'),
   // Full body / Olympic-ish
@@ -1373,7 +1374,7 @@ function buildRoutines(): Routine[] {
 }
 
 /** Bump when built-in SEED_FOODS / SEED_EXERCISES catalogs change so existing DBs get updates. */
-export const SEED_VERSION = 4
+export const SEED_VERSION = 5
 
 export async function ensureSeeded(): Promise<void> {
   const settings = await db.settings.get('main')

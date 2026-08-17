@@ -108,6 +108,8 @@ export const ru = {
     volume: 'Объём',
     addExercise: 'Добавить упражнение',
     customExercise: 'Своё упражнение',
+    technique: 'Техника выполнения',
+    noTechnique: 'Краткое описание техники пока не добавлено.',
     noWorkouts: 'Тренировок пока нет',
     templates: 'Шаблоны',
     createRoutine: 'Создать программу',
