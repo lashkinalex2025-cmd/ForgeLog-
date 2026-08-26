@@ -153,6 +153,19 @@ export const SEED_FOODS: Food[] = [
   food('f-moloko-3-2', 'Молоко 3.2%', 'Moloko 3.2%', 60, 2.9, 3.2, 4.7),
   food('f-slivki-10', 'Сливки 10%', 'Slivki 10%', 119, 2.7, 10, 4.4),
   food('f-slivki-20', 'Сливки 20%', 'Slivki 20%', 205, 2.5, 20, 4),
+  food('f-syr-tvorozhnyy', 'Сыр творожный', 'Cream cheese', 245, 6.5, 22.7, 3.6),
+  food('f-syr-plavlenyy', 'Сыр плавленый', 'Processed cheese', 300, 20.5, 23, 2.5),
+  food('f-syr-knyaz-vladimir', 'Сыр Князь Владимир', 'Knyaz Vladimir cheese', 310, 24, 23, 0),
+  food('f-syr-chernyy-prints', 'Сыр Черный принц', 'Chernyy Prints cheese', 328, 25.2, 22, 0),
+  food(
+    'f-syr-halumi-dlya-zharki-klassicheskiy',
+    'Сыр халуми для жарки классический',
+    'Halloumi for frying classic',
+    355,
+    16,
+    25,
+    2.6
+  ),
   food('f-bifidok', 'Бифидок', 'Bifidok', 52, 2.9, 2.5, 4),
   food('f-grechka-varenaya', 'Гречка варёная', 'Buckwheat cooked', 110, 4.2, 1.1, 21.3),
   food('f-grechka-suhaya', 'Гречка сухая', 'Grechka Suhaya', 313, 12.6, 3.3, 62.1),
@@ -1374,7 +1387,7 @@ function buildRoutines(): Routine[] {
 }
 
 /** Bump when built-in SEED_FOODS / SEED_EXERCISES catalogs change so existing DBs get updates. */
-export const SEED_VERSION = 5
+export const SEED_VERSION = 6
 
 export async function ensureSeeded(): Promise<void> {
   const settings = await db.settings.get('main')
