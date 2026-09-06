@@ -58,6 +58,35 @@ export const en: TranslationKeys = {
     days7: '7d',
     days14: '14d',
     days30: '30d',
+    bmiTitle: 'BMI (body mass index)',
+    bmiCalc: 'Calculate BMI',
+    bmiYour: 'Your BMI: {value}',
+    bmiMissing: 'Please enter valid height and weight values to calculate BMI.',
+    bmiUnrealistic: 'Please check the entered data. It looks like there is an error.',
+    bmiDisclaimer:
+      'Note: BMI calculation and recommendations are for informational purposes only and do not replace medical advice.\nIf you have symptoms, chronic conditions, are pregnant, or experience rapid weight change, consult a specialist.',
+    bmiCategory: {
+      underweight: 'Underweight',
+      normal: 'Normal weight',
+      overweight: 'Overweight (pre-obesity)',
+      obesity1: 'Obesity class I',
+      obesity2: 'Obesity class II',
+      obesity3: 'Obesity class III (morbid)',
+    },
+    bmiAdvice: {
+      underweight:
+        'Your BMI is below the normal range. This may indicate underweight.\n\nRecommendations:\nPay attention to calorie intake and diet balance (protein, fats, carbs).\nTry to eat regularly and add more calorie-dense but nutritious foods.\nIf you have weakness, hair loss, cycle issues (for women), or other complaints — see a doctor or dietitian.',
+      normal:
+        'Your BMI is within the normal range.\n\nRecommendations:\nKeep an active lifestyle (at least 150 minutes of moderate activity per week).\nAim for a balanced diet.\nCheck weight and BMI periodically (for example, every 1–3 months).',
+      overweight:
+        'Your BMI is above normal and indicates excess body weight.\n\nRecommendations:\nWatch portion sizes and overall calorie intake.\nReduce sweets, fast food, and sugary drinks.\nIncrease physical activity (walking, light sports 3–5 times a week).\nIf you have chronic conditions (hypertension, diabetes, etc.) — consult a doctor about safe weight loss.',
+      obesity1:
+        'Your BMI indicates obesity class I. This may raise cardiovascular and metabolic risk.\n\nRecommendations:\nSee a doctor or dietitian for an individual nutrition and activity plan.\nGradually reduce calorie intake; avoid crash diets.\nExercise regularly with your health status in mind.\nMonitor blood pressure, blood sugar, and cholesterol as advised by your doctor.',
+      obesity2:
+        'Your BMI indicates obesity class II. Health risks are substantially elevated.\n\nRecommendations:\nDefinitely see a doctor (GP, endocrinologist, or dietitian) for a full assessment.\nDo not try rapid self-directed weight loss — it can be dangerous.\nDiscuss possible medical approaches to weight loss with your doctor.\nKeep a food and activity diary and track weight under specialist supervision.',
+      obesity3:
+        'Your BMI indicates obesity class III (morbid obesity). This is a serious health risk factor.\n\nRecommendations:\nSeek medical care promptly for a full assessment and a safe weight-loss strategy.\nSpecialized treatments (medication or surgery) may be needed — only with a doctor.\nDo not use extreme diets or unsuitable exercise without medical supervision.',
+    },
   },
 
   nutrition: {

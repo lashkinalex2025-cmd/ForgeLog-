@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import {
+  Activity,
   Dumbbell,
   Plus,
   Scale,
@@ -27,6 +28,14 @@ import { lastNDaysKeys, todayKey, formatShortDate } from '@/lib/dates'
 import { formatWeight } from '@/lib/units'
 import { muscleVolumeFromSets, maxMuscleVolume } from '@/lib/calc/volume'
 import { suggestAdaptiveCalories, weightSlopeKgPerWeek } from '@/lib/calc/adaptive'
+import { calcBmi, type BmiCategoryId, type BmiResult } from '@/lib/calc/bmi'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import {
   MUSCLE_GROUPS,
   type BodyWeight,
@@ -51,6 +60,8 @@ export function DashboardPage() {
   const settings = useSettingsStore((s) => s.settings)
   const navigate = useNavigate()
   const [trendDays, setTrendDays] = useState<7 | 14 | 30>(14)
+  const [bmiOpen, setBmiOpen] = useState(false)
+  const [bmiResult, setBmiResult] = useState<BmiResult | null>(null)
   const today = todayKey()
 
   const meals =
@@ -157,6 +168,16 @@ export function DashboardPage() {
 
   const workoutCard = activeWorkout ?? plannedToday
 
+  const handleCalcBmi = () => {
+    // weight / height / age / gender from app profile + latest weigh-in
+    const result = calcBmi(latestWeight?.weightKg, settings.profile.heightCm)
+    setBmiResult(result)
+    setBmiOpen(true)
+  }
+
+  const bmiCategoryLabel = (id: BmiCategoryId) => t.dashboard.bmiCategory[id]
+  const bmiAdviceText = (id: BmiCategoryId) => t.dashboard.bmiAdvice[id]
+
   return (
     <div className="space-y-4 animate-fade-in">
       <header className="flex items-end justify-between">
@@ -168,6 +189,65 @@ export function DashboardPage() {
           {t.settings[settings.phase]}
         </Badge>
       </header>
+
+      {/* BMI */}
+      <Card className="border-primary/40 bg-primary/5">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="h-5 w-5 text-primary" />
+            {t.dashboard.bmiTitle}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Button
+            size="lg"
+            className="w-full h-12 text-base font-semibold shadow-md"
+            onClick={handleCalcBmi}
+          >
+            {t.dashboard.bmiCalc}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Dialog open={bmiOpen} onOpenChange={setBmiOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t.dashboard.bmiTitle}</DialogTitle>
+            <DialogDescription className="sr-only">
+              {t.dashboard.bmiTitle}
+            </DialogDescription>
+          </DialogHeader>
+          {bmiResult && !bmiResult.ok && (
+            <p className="text-sm text-amber-500">
+              {bmiResult.error === 'missing'
+                ? t.dashboard.bmiMissing
+                : t.dashboard.bmiUnrealistic}
+            </p>
+          )}
+          {bmiResult?.ok && (
+            <div className="space-y-3">
+              <p className="text-2xl font-bold tabular-nums">
+                {t.dashboard.bmiYour.replace('{value}', String(bmiResult.bmi))}
+              </p>
+              <Badge variant="secondary" className="text-sm">
+                {bmiCategoryLabel(bmiResult.category)}
+              </Badge>
+              <p className="text-sm whitespace-pre-line leading-relaxed">
+                {bmiAdviceText(bmiResult.category)}
+              </p>
+              <p className="text-[11px] text-muted-foreground whitespace-pre-line border-t border-border pt-3">
+                {t.dashboard.bmiDisclaimer}
+              </p>
+            </div>
+          )}
+          <div className="flex justify-end gap-2 pt-1">
+            <Button variant="outline" onClick={() => setBmiOpen(false)}>
+              {t.common.close}
+            </Button>
+            <Button onClick={handleCalcBmi}>{t.dashboard.bmiCalc}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Quick actions */}
       <div className="grid grid-cols-3 gap-2">

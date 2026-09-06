@@ -12,6 +12,7 @@ import { useSettingsStore } from '@/stores/settingsStore'
 import { useThemeListener } from '@/hooks/useTheme'
 import { useRestTimerTicker } from '@/hooks/useRestTimer'
 import { ensureSeeded } from '@/db/seed'
+import { armWelcomeAudioOnGesture, playWelcomeAudio } from '@/lib/welcomeAudio'
 
 function Bootstrap() {
   const load = useSettingsStore((s) => s.load)
@@ -29,6 +30,12 @@ function Bootstrap() {
       setSeeded(true)
     })()
   }, [load])
+
+  useEffect(() => {
+    if (!ready || !seeded) return
+    void playWelcomeAudio()
+    return armWelcomeAudioOnGesture()
+  }, [ready, seeded])
 
   if (!ready || !seeded) {
     return (
