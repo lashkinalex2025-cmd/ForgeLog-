@@ -5,6 +5,7 @@ import { DashboardPage } from '@/pages/DashboardPage'
 import { NutritionPage } from '@/pages/NutritionPage'
 import { WorkoutPage } from '@/pages/WorkoutPage'
 import { ActiveWorkoutPage } from '@/pages/ActiveWorkoutPage'
+import { TimerPage } from '@/pages/TimerPage'
 import { ProgressPage } from '@/pages/ProgressPage'
 import { SettingsPage } from '@/pages/SettingsPage'
 import { OnboardingPage } from '@/pages/OnboardingPage'
@@ -33,6 +34,7 @@ function Bootstrap() {
 
   useEffect(() => {
     if (!ready || !seeded) return
+    // Try immediately; if the browser blocks autoplay, keep listening for a gesture.
     void playWelcomeAudio()
     return armWelcomeAudioOnGesture()
   }, [ready, seeded])
@@ -65,6 +67,7 @@ function Bootstrap() {
             <Route path="nutrition" element={<NutritionPage />} />
             <Route path="workout" element={<WorkoutPage />} />
             <Route path="workout/active/:id" element={<ActiveWorkoutPage />} />
+            <Route path="timer" element={<TimerPage />} />
             <Route path="progress" element={<ProgressPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>

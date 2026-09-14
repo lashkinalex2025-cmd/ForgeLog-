@@ -1,9 +1,19 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Dumbbell, Library, ListChecks, Play, Plus } from 'lucide-react'
+import {
+  CheckSquare,
+  Clock,
+  Dumbbell,
+  Library,
+  ListChecks,
+  Play,
+  Plus,
+  Trash2,
+} from 'lucide-react'
 import { db } from '@/db'
 import { useSettingsStore } from '@/stores/settingsStore'
+import { useUiStore } from '@/stores/uiStore'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -25,18 +35,22 @@ import {
 } from '@/components/ui/select'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Badge } from '@/components/ui/badge'
+import { TimerPanel } from '@/pages/TimerPage'
 import { todayKey, uid } from '@/lib/dates'
+import { cn } from '@/lib/cn'
 import type { Equipment, Exercise, MuscleGroup, Routine } from '@/types'
 import { MUSCLE_GROUPS } from '@/types'
 
 export function WorkoutPage() {
   const t = useSettingsStore((s) => s.t)
   const settings = useSettingsStore((s) => s.settings)
+  const toast = useUiStore((s) => s.toast)
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [muscleFilter, setMuscleFilter] = useState<string>('all')
   const [customOpen, setCustomOpen] = useState(false)
   const [detailEx, setDetailEx] = useState<Exercise | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [customEx, setCustomEx] = useState({
     name: '',
     primaryMuscle: 'chest' as MuscleGroup,
@@ -116,6 +130,54 @@ export function WorkoutPage() {
     setCustomEx({ name: '', primaryMuscle: 'chest', equipment: 'barbell' })
   }
 
+  const workoutIds = useMemo(() => workouts.map((w) => w.id), [workouts])
+  const allSelected =
+    workoutIds.length > 0 && workoutIds.every((id) => selectedIds.has(id))
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function toggleSelectAll() {
+    if (allSelected) setSelectedIds(new Set())
+    else setSelectedIds(new Set(workoutIds))
+  }
+
+  async function deleteWorkoutIds(ids: string[]) {
+    if (!ids.length) return
+    await db.transaction('rw', db.workouts, db.sets, async () => {
+      for (const id of ids) {
+        await db.sets.where('workoutId').equals(id).delete()
+        await db.workouts.delete(id)
+      }
+    })
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      for (const id of ids) next.delete(id)
+      return next
+    })
+  }
+
+  async function clearSelectedHistory() {
+    const ids = [...selectedIds]
+    if (!ids.length) return
+    if (!window.confirm(t.workout.deleteSelectedConfirm)) return
+    await deleteWorkoutIds(ids)
+    toast({ title: t.workout.historyDeleted, variant: 'warning' })
+  }
+
+  async function clearAllHistory() {
+    if (!workouts.length) return
+    if (!window.confirm(t.workout.clearHistoryConfirm)) return
+    await deleteWorkoutIds(workoutIds)
+    toast({ title: t.workout.historyCleared, variant: 'warning' })
+  }
+
   return (
     <div className="space-y-4 animate-fade-in">
       <header className="flex items-center justify-between">
@@ -133,7 +195,7 @@ export function WorkoutPage() {
       </header>
 
       <Tabs defaultValue="routines">
-        <TabsList>
+        <TabsList className="flex h-auto flex-wrap gap-1">
           <TabsTrigger value="routines">
             <ListChecks className="h-4 w-4 mr-1" />
             {t.workout.routines}
@@ -143,6 +205,10 @@ export function WorkoutPage() {
             {t.workout.library}
           </TabsTrigger>
           <TabsTrigger value="history">{t.workout.history}</TabsTrigger>
+          <TabsTrigger value="timer">
+            <Clock className="h-4 w-4 mr-1" />
+            {t.workout.timerTab}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="routines" className="space-y-3">
@@ -234,37 +300,103 @@ export function WorkoutPage() {
           {!workouts.length ? (
             <EmptyState icon={Dumbbell} title={t.workout.noWorkouts} />
           ) : (
-            <div className="space-y-2">
-              {workouts.map((w) => (
-                <Card key={w.id}>
-                  <CardContent className="py-3 flex items-center justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="font-medium truncate">{w.name}</div>
-                      <div className="text-xs text-muted-foreground">{w.date}</div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Badge
-                        variant={
-                          w.status === 'done'
-                            ? 'success'
-                            : w.status === 'active'
-                              ? 'warning'
-                              : 'secondary'
-                        }
-                      >
-                        {w.status}
-                      </Badge>
-                      {w.status === 'active' && (
-                        <Button size="sm" asChild>
-                          <Link to={`/workout/active/${w.id}`}>{t.workout.active}</Link>
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button size="sm" variant="outline" onClick={toggleSelectAll}>
+                  <CheckSquare className="h-4 w-4" />
+                  {allSelected ? t.workout.deselectAll : t.workout.selectAll}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  disabled={!selectedIds.size}
+                  onClick={clearSelectedHistory}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {t.workout.deleteSelected}
+                </Button>
+                <Button size="sm" variant="outline" onClick={clearAllHistory}>
+                  <Trash2 className="h-4 w-4" />
+                  {t.workout.clearHistory}
+                </Button>
+                {selectedIds.size > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {t.workout.selectedCount.replace(
+                      '{count}',
+                      String(selectedIds.size)
+                    )}
+                  </span>
+                )}
+              </div>
+              <div className="space-y-2">
+                {workouts.map((w) => {
+                  const checked = selectedIds.has(w.id)
+                  return (
+                    <Card
+                      key={w.id}
+                      className={cn(checked && 'border-primary/50 bg-primary/5')}
+                    >
+                      <CardContent className="py-3 flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 shrink-0 accent-primary"
+                          checked={checked}
+                          onChange={() => toggleSelect(w.id)}
+                          aria-label={w.name}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium truncate">{w.name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {w.date}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Badge
+                            variant={
+                              w.status === 'done'
+                                ? 'success'
+                                : w.status === 'active'
+                                  ? 'warning'
+                                  : 'secondary'
+                            }
+                          >
+                            {w.status}
+                          </Badge>
+                          {w.status === 'active' && (
+                            <Button size="sm" asChild>
+                              <Link to={`/workout/active/${w.id}`}>
+                                {t.workout.active}
+                              </Link>
+                            </Button>
+                          )}
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            aria-label={t.common.delete}
+                            onClick={async () => {
+                              if (!window.confirm(t.workout.deleteSelectedConfirm))
+                                return
+                              await deleteWorkoutIds([w.id])
+                              toast({
+                                title: t.workout.historyDeleted,
+                                variant: 'warning',
+                              })
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="timer">
+          <TimerPanel embedded />
         </TabsContent>
       </Tabs>
 

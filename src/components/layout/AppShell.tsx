@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
+  Clock,
   Dumbbell,
   Home,
   Settings,
@@ -15,6 +16,7 @@ const nav = [
   { to: '/', icon: Home, key: 'dashboard' as const },
   { to: '/nutrition', icon: Utensils, key: 'nutrition' as const },
   { to: '/workout', icon: Dumbbell, key: 'workout' as const },
+  { to: '/timer', icon: Clock, key: 'timer' as const },
   { to: '/progress', icon: TrendingUp, key: 'progress' as const },
   { to: '/settings', icon: Settings, key: 'settings' as const },
 ]

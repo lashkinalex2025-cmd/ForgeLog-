@@ -1,126 +1,112 @@
-const SESSION_KEY = 'forgelog-welcome-played'
+const SESSION_KEY = 'forgelog-welcome-played-v2'
 
-function playApplause(ctx: AudioContext, durationSec = 2.2): Promise<void> {
-  return new Promise((resolve) => {
-    const sampleRate = ctx.sampleRate
-    const length = Math.floor(sampleRate * durationSec)
-    const buffer = ctx.createBuffer(2, length, sampleRate)
-
-    for (let ch = 0; ch < 2; ch++) {
-      const data = buffer.getChannelData(ch)
-      for (let i = 0; i < length; i++) {
-        const t = i / sampleRate
-        const envelope =
-          Math.min(1, t * 8) * Math.exp(-t * 1.35) * (0.55 + 0.45 * Math.random())
-        // Filtered noise bursts approximate applause claps
-        const clap =
-          (Math.random() * 2 - 1) *
-          (0.35 + 0.65 * Math.pow(Math.random(), 0.35))
-        data[i] = clap * envelope * 0.45
-      }
-    }
-
-    const source = ctx.createBufferSource()
-    source.buffer = buffer
-
-    const filter = ctx.createBiquadFilter()
-    filter.type = 'bandpass'
-    filter.frequency.value = 1800
-    filter.Q.value = 0.7
-
-    const gain = ctx.createGain()
-    gain.gain.value = 0.9
-
-    source.connect(filter)
-    filter.connect(gain)
-    gain.connect(ctx.destination)
-
-    source.onended = () => resolve()
-    source.start()
-  })
+function assetUrl(file: string): string {
+  const base = import.meta.env.BASE_URL || '/'
+  const root = base.endsWith('/') ? base : `${base}/`
+  return `${root}sounds/${file}`
 }
 
-function speakReady(): Promise<void> {
-  return new Promise((resolve) => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+function playHtmlAudio(src: string, volume = 1): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const audio = new Audio(src)
+    audio.preload = 'auto'
+    audio.volume = Math.min(1, Math.max(0, volume))
+    const done = () => {
+      cleanup()
       resolve()
-      return
     }
-
-    const utter = new SpeechSynthesisUtterance('Are you ready!!!')
-    utter.lang = 'en-US'
-    utter.rate = 1
-    utter.pitch = 0.75
-    utter.volume = 1
-
-    const pickMaleVoice = () => {
-      const voices = window.speechSynthesis.getVoices()
-      const male =
-        voices.find((v) => /male|david|mark|george|daniel|ryan|guy/i.test(v.name)) ||
-        voices.find((v) => v.lang.startsWith('en') && !/female|zira|samantha|karen/i.test(v.name)) ||
-        voices.find((v) => v.lang.startsWith('en'))
-      if (male) utter.voice = male
+    const fail = (err?: unknown) => {
+      cleanup()
+      reject(err instanceof Error ? err : new Error(String(err ?? 'audio failed')))
     }
-
-    pickMaleVoice()
-    if (!utter.voice) {
-      window.speechSynthesis.onvoiceschanged = () => {
-        pickMaleVoice()
-      }
+    const cleanup = () => {
+      audio.onended = null
+      audio.onerror = null
     }
-
-    utter.onend = () => resolve()
-    utter.onerror = () => resolve()
-    window.speechSynthesis.cancel()
-    window.speechSynthesis.speak(utter)
+    audio.onended = done
+    audio.onerror = () => fail(new Error(`Failed to load ${src}`))
+    const p = audio.play()
+    if (p && typeof p.then === 'function') {
+      p.catch(fail)
+    }
   })
 }
 
 let playing = false
+let completed = false
 
-/** Play applause then a male TTS line. Once per browser session. */
-export async function playWelcomeAudio(): Promise<void> {
-  if (typeof window === 'undefined') return
+function alreadyPlayed(): boolean {
+  if (completed) return true
   try {
-    if (sessionStorage.getItem(SESSION_KEY)) return
+    return sessionStorage.getItem(SESSION_KEY) === '1'
   } catch {
-    // ignore storage errors
+    return false
   }
-  if (playing) return
+}
+
+function markPlayed(): void {
+  completed = true
+  try {
+    sessionStorage.setItem(SESSION_KEY, '1')
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * Play applause, then a male voice saying "Are you ready!!!".
+ * Browsers often block autoplay — call again after a user gesture until it succeeds.
+ */
+export async function playWelcomeAudio(): Promise<boolean> {
+  if (typeof window === 'undefined') return false
+  if (alreadyPlayed()) return true
+  if (playing) return false
   playing = true
 
   try {
-    const Ctx =
-      window.AudioContext ||
-      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
-    const ctx = new Ctx()
-    if (ctx.state === 'suspended') {
-      await ctx.resume()
-    }
-    await playApplause(ctx)
-    await ctx.close()
-    await speakReady()
-    try {
-      sessionStorage.setItem(SESSION_KEY, '1')
-    } catch {
-      // ignore
-    }
+    await playHtmlAudio(assetUrl('applause.wav'), 1)
+    await playHtmlAudio(assetUrl('are-you-ready.wav'), 1)
+    markPlayed()
+    return true
   } catch {
-    // Autoplay may be blocked; fall through to gesture retry
+    // Autoplay / load blocked — wait for next user gesture
+    return false
+  } finally {
     playing = false
   }
 }
 
-/** Attach a one-shot listener so welcome audio plays after first user gesture if autoplay failed. */
+/**
+ * Keep listening for user gestures until welcome audio finishes successfully.
+ * Returns a cleanup function.
+ */
 export function armWelcomeAudioOnGesture(): () => void {
-  const handler = () => {
-    void playWelcomeAudio()
+  if (typeof window === 'undefined') return () => {}
+  if (alreadyPlayed()) return () => {}
+
+  let active = true
+
+  const tryPlay = () => {
+    if (!active || alreadyPlayed() || playing) return
+    void playWelcomeAudio().then((ok) => {
+      if (ok) detach()
+    })
   }
-  const opts: AddEventListenerOptions = { once: true, capture: true }
-  window.addEventListener('pointerdown', handler, opts)
-  window.addEventListener('keydown', handler, opts)
-  return () => {
-    window.removeEventListener('pointerdown', handler, opts)
-    window.removeEventListener('keydown', handler, opts)
+
+  const opts: AddEventListenerOptions = { capture: true }
+  const events = ['pointerdown', 'touchstart', 'keydown', 'click'] as const
+
+  const detach = () => {
+    if (!active) return
+    active = false
+    for (const ev of events) {
+      window.removeEventListener(ev, tryPlay, opts)
+    }
   }
+
+  for (const ev of events) {
+    window.addEventListener(ev, tryPlay, opts)
+  }
+
+  return detach
 }
