@@ -11,6 +11,10 @@ import {
 } from 'lucide-react'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useUiStore } from '@/stores/uiStore'
+import {
+  getTimerProgress,
+  useTimerStore,
+} from '@/stores/timerStore'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,7 +22,6 @@ import { Label } from '@/components/ui/label'
 import { Progress } from '@/components/ui/progress'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
-import { useIntervalTimer } from '@/hooks/useIntervalTimer'
 import {
   createTimerPreset,
   loadTimerPresets,
@@ -44,6 +47,17 @@ export function TimerPanel({ embedded = false }: { embedded?: boolean }) {
   const locale = useSettingsStore((s) => s.settings.locale)
   const toast = useUiStore((s) => s.toast)
 
+  const phase = useTimerStore((s) => s.phase)
+  const round = useTimerStore((s) => s.round)
+  const remainingSec = useTimerStore((s) => s.remainingSec)
+  const phaseDurationSec = useTimerStore((s) => s.phaseDurationSec)
+  const paused = useTimerStore((s) => s.paused)
+  const exerciseName = useTimerStore((s) => s.exerciseName)
+  const start = useTimerStore((s) => s.start)
+  const pause = useTimerStore((s) => s.pause)
+  const resume = useTimerStore((s) => s.resume)
+  const reset = useTimerStore((s) => s.reset)
+
   const [workSec, setWorkSec] = useState(40)
   const [restSec, setRestSec] = useState(20)
   const [rounds, setRounds] = useState(8)
@@ -68,50 +82,40 @@ export function TimerPanel({ embedded = false }: { embedded?: boolean }) {
     [exercisesText]
   )
 
-  const timer = useIntervalTimer({
-    workSec,
-    restSec,
-    rounds,
-    prepSec,
-    exercises,
-    locale,
-    soundEnabled,
-    voiceEnabled,
-    vibrateEnabled,
-  })
+  const progress = getTimerProgress({ phase, phaseDurationSec, remainingSec })
 
   const phaseLabel =
-    timer.phase === 'prep'
+    phase === 'prep'
       ? t.timer.prep
-      : timer.phase === 'work'
+      : phase === 'work'
         ? t.timer.work
-        : timer.phase === 'rest'
+        : phase === 'rest'
           ? t.timer.rest
-          : timer.phase === 'done'
+          : phase === 'done'
             ? t.timer.finished
             : t.timer.ready
 
   const phaseColor =
-    timer.phase === 'work'
+    phase === 'work'
       ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400'
-      : timer.phase === 'rest'
+      : phase === 'rest'
         ? 'bg-sky-500/15 border-sky-500/40 text-sky-400'
-        : timer.phase === 'prep'
+        : phase === 'prep'
           ? 'bg-amber-500/15 border-amber-500/40 text-amber-400'
-          : timer.phase === 'done'
+          : phase === 'done'
             ? 'bg-primary/15 border-primary/40 text-primary'
             : 'bg-muted border-border text-muted-foreground'
 
   const progressIndicator =
-    timer.phase === 'work'
+    phase === 'work'
       ? 'bg-emerald-500'
-      : timer.phase === 'rest'
+      : phase === 'rest'
         ? 'bg-sky-500'
-        : timer.phase === 'prep'
+        : phase === 'prep'
           ? 'bg-amber-500'
           : 'bg-primary'
 
-  const busy = timer.phase !== 'idle' && timer.phase !== 'done'
+  const busy = phase !== 'idle' && phase !== 'done'
 
   function applyPreset(p: TimerPreset) {
     if (busy) return
@@ -158,13 +162,12 @@ export function TimerPanel({ embedded = false }: { embedded?: boolean }) {
         </header>
       )}
 
-      {/* Active display */}
       <Card
         className={cn(
           'border-2 transition-colors',
-          timer.phase === 'work' && 'border-emerald-500/50',
-          timer.phase === 'rest' && 'border-sky-500/50',
-          timer.phase === 'prep' && 'border-amber-500/50'
+          phase === 'work' && 'border-emerald-500/50',
+          phase === 'rest' && 'border-sky-500/50',
+          phase === 'prep' && 'border-amber-500/50'
         )}
       >
         <CardContent className="pt-6 space-y-4">
@@ -172,54 +175,58 @@ export function TimerPanel({ embedded = false }: { embedded?: boolean }) {
             <Badge className={cn('border text-sm px-3 py-1', phaseColor)}>
               {phaseLabel}
             </Badge>
-            {timer.phase !== 'idle' && timer.phase !== 'prep' && (
+            {phase !== 'idle' && phase !== 'prep' && (
               <span className="text-sm text-muted-foreground">
-                {t.timer.round} {Math.max(1, timer.round)} / {rounds}
+                {t.timer.round} {Math.max(1, round)} / {rounds}
               </span>
             )}
           </div>
 
           <div className="text-center space-y-1">
             <div className="text-6xl sm:text-7xl font-bold tabular-nums tracking-tight">
-              {timer.phase === 'idle'
-                ? formatMmSs(workSec)
-                : formatMmSs(timer.remainingSec)}
+              {phase === 'idle' ? formatMmSs(workSec) : formatMmSs(remainingSec)}
             </div>
-            {timer.exerciseName ? (
+            {exerciseName ? (
               <div className="text-base font-medium text-foreground">
-                {timer.exerciseName}
+                {exerciseName}
               </div>
             ) : (
               <div className="text-sm text-muted-foreground">
-                {timer.phase === 'idle' ? t.timer.hint : phaseLabel}
+                {phase === 'idle' ? t.timer.hint : phaseLabel}
               </div>
             )}
           </div>
 
           <Progress
-            value={timer.phase === 'idle' ? 0 : timer.progress}
+            value={phase === 'idle' ? 0 : progress}
             className="h-3"
             indicatorClassName={progressIndicator}
           />
 
           <div className="flex flex-wrap gap-2 justify-center">
-            {timer.phase === 'idle' || timer.phase === 'done' ? (
+            {phase === 'idle' || phase === 'done' ? (
               <Button
                 size="lg"
                 className="min-w-[8rem]"
-                onClick={() => {
-                  setWorkSec(clampSec(workSec, 1, 3600))
-                  setRestSec(clampSec(restSec, 0, 3600))
-                  setRounds(clampSec(rounds, 1, 99))
-                  setPrepSec(clampSec(prepSec, 0, 60))
-                  timer.start()
-                }}
+                onClick={() =>
+                  start({
+                    workSec: clampSec(workSec, 1, 3600),
+                    restSec: clampSec(restSec, 0, 3600),
+                    rounds: clampSec(rounds, 1, 99),
+                    prepSec: clampSec(prepSec, 0, 60),
+                    exercises,
+                    locale,
+                    soundEnabled,
+                    voiceEnabled,
+                    vibrateEnabled,
+                  })
+                }
               >
                 <Play className="h-5 w-5" />
                 {t.timer.start}
               </Button>
-            ) : timer.paused ? (
-              <Button size="lg" className="min-w-[8rem]" onClick={timer.resume}>
+            ) : paused ? (
+              <Button size="lg" className="min-w-[8rem]" onClick={resume}>
                 <Play className="h-5 w-5" />
                 {t.timer.resume}
               </Button>
@@ -228,7 +235,7 @@ export function TimerPanel({ embedded = false }: { embedded?: boolean }) {
                 size="lg"
                 variant="secondary"
                 className="min-w-[8rem]"
-                onClick={timer.pause}
+                onClick={pause}
               >
                 <Pause className="h-5 w-5" />
                 {t.timer.pause}
@@ -237,8 +244,8 @@ export function TimerPanel({ embedded = false }: { embedded?: boolean }) {
             <Button
               size="lg"
               variant="outline"
-              onClick={timer.reset}
-              disabled={timer.phase === 'idle'}
+              onClick={reset}
+              disabled={phase === 'idle'}
             >
               <RotateCcw className="h-5 w-5" />
               {t.timer.reset}
@@ -247,7 +254,6 @@ export function TimerPanel({ embedded = false }: { embedded?: boolean }) {
         </CardContent>
       </Card>
 
-      {/* Settings */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">{t.timer.settings}</CardTitle>
@@ -350,7 +356,6 @@ export function TimerPanel({ embedded = false }: { embedded?: boolean }) {
         </CardContent>
       </Card>
 
-      {/* Save presets */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">{t.timer.presets}</CardTitle>

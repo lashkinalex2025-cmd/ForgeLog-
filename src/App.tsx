@@ -12,6 +12,7 @@ import { OnboardingPage } from '@/pages/OnboardingPage'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useThemeListener } from '@/hooks/useTheme'
 import { useRestTimerTicker } from '@/hooks/useRestTimer'
+import { useIntervalTimerTicker } from '@/hooks/useIntervalTimer'
 import { ensureSeeded } from '@/db/seed'
 import { armWelcomeAudioOnGesture, playWelcomeAudio } from '@/lib/welcomeAudio'
 
@@ -23,6 +24,7 @@ function Bootstrap() {
 
   useThemeListener()
   useRestTimerTicker()
+  useIntervalTimerTicker()
 
   useEffect(() => {
     ;(async () => {
