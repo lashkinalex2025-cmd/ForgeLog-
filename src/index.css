@@ -56,6 +56,34 @@
     --ring: 160 84% 42%;
   }
 
+  .premium {
+    color-scheme: dark;
+    --background: 30 10% 6%;
+    --foreground: 40 33% 94%;
+    --card: 30 8% 9%;
+    --card-foreground: 40 33% 94%;
+    --popover: 32 10% 10%;
+    --popover-foreground: 40 33% 94%;
+    --primary: 40 52% 56%;
+    --primary-foreground: 30 20% 8%;
+    --secondary: 32 8% 14%;
+    --secondary-foreground: 40 25% 92%;
+    --muted: 30 6% 13%;
+    --muted-foreground: 35 14% 68%;
+    --accent: 36 22% 16%;
+    --accent-foreground: 40 40% 92%;
+    --destructive: 0 62% 48%;
+    --destructive-foreground: 40 30% 96%;
+    --success: 152 32% 38%;
+    --success-foreground: 40 30% 96%;
+    --warning: 38 72% 50%;
+    --warning-foreground: 30 20% 8%;
+    --border: 36 16% 20%;
+    --input: 32 8% 16%;
+    --ring: 40 52% 56%;
+    --radius: 0.9rem;
+  }
+
   * {
     @apply border-border;
   }
@@ -85,4 +113,40 @@
   .scrollbar-thin {
     scrollbar-width: thin;
   }
+}
+
+html.premium body {
+  background-color: hsl(var(--background));
+  background-image: radial-gradient(
+    900px 420px at 50% -80px,
+    hsl(38 42% 22% / 0.55),
+    transparent 70%
+  );
+  background-attachment: fixed;
+}
+
+html.premium #root > .min-h-dvh {
+  background-color: transparent;
+}
+
+html.premium[data-custom-bg] body {
+  background-image: none;
+}
+
+html.premium .rounded-xl.border.bg-card {
+  box-shadow:
+    0 12px 32px hsl(20 40% 2% / 0.35),
+    inset 0 1px 0 hsl(40 40% 48% / 0.16);
+}
+
+html.premium:not([data-custom-buttons]) button[data-variant='default'] {
+  background-image: linear-gradient(180deg, hsl(42 62% 64%) 0%, hsl(36 48% 46%) 100%);
+  color: hsl(30 20% 8%);
+  box-shadow:
+    inset 0 1px 0 hsl(45 80% 82% / 0.45),
+    0 8px 18px hsl(28 40% 4% / 0.28);
+}
+
+html.premium:not([data-custom-buttons]) button[data-variant='default']:hover {
+  background-image: linear-gradient(180deg, hsl(42 66% 70%) 0%, hsl(36 52% 52%) 100%);
 }

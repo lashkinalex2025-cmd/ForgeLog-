@@ -89,6 +89,8 @@ export function ProgressPage() {
   })
   const [compareA, setCompareA] = useState<string>('')
   const [compareB, setCompareB] = useState<string>('')
+  const [bfInput, setBfInput] = useState({ waist: '', neck: '', hips: '' })
+  const bfPrefilled = useRef(false)
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({})
   const [exporting, setExporting] = useState(false)
   const exportRef = useRef<HTMLDivElement>(null)
@@ -138,6 +140,34 @@ export function ProgressPage() {
 
   const delta = weightDelta(weights.map((w) => ({ date: w.date, weightKg: w.weightKg })))
   const latestMeas = measurements[measurements.length - 1]
+
+  useEffect(() => {
+    if (bfPrefilled.current || !latestMeas) return
+    if (latestMeas.waist == null && latestMeas.neck == null && latestMeas.hips == null) return
+    bfPrefilled.current = true
+    const toDisp = (n?: number) =>
+      n != null ? String(Math.round(cmToDisplay(n, settings.lengthUnit) * 10) / 10) : ''
+    setBfInput({
+      waist: toDisp(latestMeas.waist),
+      neck: toDisp(latestMeas.neck),
+      hips: toDisp(latestMeas.hips),
+    })
+  }, [latestMeas, settings.lengthUnit])
+
+  const manualBf = useMemo(() => {
+    const waist = Number(bfInput.waist)
+    const neck = Number(bfInput.neck)
+    const hips = Number(bfInput.hips)
+    if (!(waist > 0) || !(neck > 0) || !(settings.profile.heightCm > 0)) return null
+    return estimateBodyFatNavy({
+      sex: settings.profile.sex,
+      heightCm: settings.profile.heightCm,
+      waistCm: displayToCm(waist, settings.lengthUnit),
+      neckCm: displayToCm(neck, settings.lengthUnit),
+      hipsCm: hips > 0 ? displayToCm(hips, settings.lengthUnit) : undefined,
+    })
+  }, [bfInput, settings.profile.heightCm, settings.profile.sex, settings.lengthUnit])
+
   const bf =
     latestMeas?.waist && latestMeas?.neck
       ? estimateBodyFatNavy({
@@ -264,12 +294,76 @@ export function ProgressPage() {
           <CardContent className="pt-4">
             <div className="text-xs text-muted-foreground">{t.progress.bodyFat}</div>
             <div className="text-xl font-bold tabular-nums">
-              {bf != null ? `${bf}%` : '—'}
+              {(manualBf ?? bf) != null ? `${manualBf ?? bf}%` : '—'}
             </div>
             <div className="text-xs text-muted-foreground">Navy formula</div>
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t.progress.bodyFatCalc}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-xs text-muted-foreground">{t.progress.bodyFatHint}</p>
+          <p className="text-xs text-muted-foreground">
+            {t.progress.bodyFatUsesProfile}:{' '}
+            {Math.round(cmToDisplay(settings.profile.heightCm, settings.lengthUnit) * 10) / 10}{' '}
+            {settings.lengthUnit}
+            {' · '}
+            {settings.profile.sex === 'female'
+              ? t.settings.female
+              : settings.profile.sex === 'male'
+                ? t.settings.male
+                : t.settings.other}
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {(
+              [
+                ['waist', t.progress.waist],
+                ['neck', t.progress.neck],
+                ['hips', t.progress.hips],
+              ] as const
+            ).map(([key, label]) => (
+              <div key={key} className="space-y-1">
+                <Label>
+                  {label} ({settings.lengthUnit})
+                </Label>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  step="0.1"
+                  value={bfInput[key]}
+                  onChange={(e) => {
+                    bfPrefilled.current = true
+                    setBfInput((prev) => ({ ...prev, [key]: e.target.value }))
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground">{t.progress.bodyFatResult}</div>
+            <div className="text-2xl font-bold tabular-nums">
+              {manualBf != null ? `${manualBf}%` : '—'}
+            </div>
+          </div>
+          {settings.profile.sex === 'female' &&
+            Number(bfInput.waist) > 0 &&
+            Number(bfInput.neck) > 0 &&
+            !(Number(bfInput.hips) > 0) && (
+              <p className="text-xs text-muted-foreground">{t.progress.bodyFatNeedHips}</p>
+            )}
+          {Number(bfInput.waist) > 0 &&
+            Number(bfInput.neck) > 0 &&
+            (settings.profile.sex !== 'female' || Number(bfInput.hips) > 0) &&
+            manualBf == null && (
+              <p className="text-xs text-warning">{t.progress.bodyFatInvalid}</p>
+            )}
+        </CardContent>
+      </Card>
 
       <Tabs key={defaultTab} defaultValue={defaultTab}>
         <TabsList>

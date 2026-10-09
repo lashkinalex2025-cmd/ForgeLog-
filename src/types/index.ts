@@ -1,5 +1,5 @@
 export type Locale = 'ru' | 'en'
-export type ThemeMode = 'dark' | 'light' | 'system'
+export type ThemeMode = 'dark' | 'light' | 'system' | 'premium'
 export type WeightUnit = 'kg' | 'lb'
 export type LengthUnit = 'cm' | 'in'
 export type Phase = 'bulk' | 'cut' | 'maintain'
@@ -71,6 +71,10 @@ export interface Profile {
 export interface AppSettings {
   id: string
   theme: ThemeMode
+  /** Custom button color (#rrggbb). Omitted means the theme default. */
+  buttonColor?: string
+  /** Custom page background (#rrggbb). Omitted means the theme default. */
+  backgroundColor?: string
   locale: Locale
   weightUnit: WeightUnit
   lengthUnit: LengthUnit

@@ -22,7 +22,77 @@ import {
 } from '@/lib/exportImport'
 import { ensureSeeded } from '@/db/seed'
 import { cmToDisplay, displayToCm } from '@/lib/units'
+import {
+  normalizeHex,
+  THEME_BG_FALLBACK,
+  THEME_BUTTON_FALLBACK,
+} from '@/lib/appearance'
 import type { ActivityLevel, LengthUnit, Locale, Phase, Sex, ThemeMode } from '@/types'
+
+function ColorControl({
+  label,
+  value,
+  fallback,
+  onChange,
+  onReset,
+}: {
+  label: string
+  value?: string
+  fallback: string
+  onChange: (hex: string) => void
+  onReset: () => void
+}) {
+  const resetLabel = useSettingsStore((s) => s.t.settings.colorReset)
+  const [text, setText] = useState(value ?? '')
+
+  useEffect(() => {
+    setText(value ?? '')
+  }, [value])
+
+  return (
+    <div className="space-y-1">
+      <Label>{label}</Label>
+      <div className="flex items-center gap-2">
+        <input
+          type="color"
+          aria-label={label}
+          className="h-11 w-14 shrink-0 cursor-pointer rounded-lg border border-input bg-transparent p-1"
+          value={value ?? fallback}
+          onChange={(e) => {
+            const hex = normalizeHex(e.target.value)
+            if (hex) onChange(hex)
+          }}
+        />
+        <Input
+          value={text}
+          placeholder={fallback}
+          spellCheck={false}
+          className="min-w-0 w-auto flex-1 font-mono uppercase"
+          onChange={(e) => {
+            const next = e.target.value
+            setText(next)
+            if (next.trim() === '') {
+              onReset()
+              return
+            }
+            const hex = normalizeHex(next)
+            if (hex) onChange(hex)
+          }}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="shrink-0"
+          onClick={onReset}
+          disabled={!value}
+        >
+          {resetLabel}
+        </Button>
+      </div>
+    </div>
+  )
+}
 
 export function SettingsPage() {
   const t = useSettingsStore((s) => s.t)
@@ -277,9 +347,37 @@ export function SettingsPage() {
                 <SelectItem value="dark">{t.settings.themeDark}</SelectItem>
                 <SelectItem value="light">{t.settings.themeLight}</SelectItem>
                 <SelectItem value="system">{t.settings.themeSystem}</SelectItem>
+                <SelectItem value="premium">{t.settings.themePremium}</SelectItem>
               </SelectContent>
             </Select>
           </div>
+          <ColorControl
+            label={t.settings.buttonColor}
+            value={settings.buttonColor}
+            fallback={
+              settings.theme === 'system'
+                ? window.matchMedia('(prefers-color-scheme: dark)').matches
+                  ? THEME_BUTTON_FALLBACK.dark
+                  : THEME_BUTTON_FALLBACK.light
+                : THEME_BUTTON_FALLBACK[settings.theme]
+            }
+            onChange={(hex) => update({ buttonColor: hex })}
+            onReset={() => update({ buttonColor: '' })}
+          />
+          <ColorControl
+            label={t.settings.backgroundColor}
+            value={settings.backgroundColor}
+            fallback={
+              settings.theme === 'system'
+                ? window.matchMedia('(prefers-color-scheme: dark)').matches
+                  ? THEME_BG_FALLBACK.dark
+                  : THEME_BG_FALLBACK.light
+                : THEME_BG_FALLBACK[settings.theme]
+            }
+            onChange={(hex) => update({ backgroundColor: hex })}
+            onReset={() => update({ backgroundColor: '' })}
+          />
+          <p className="text-xs text-muted-foreground">{t.settings.colorHint}</p>
           <div className="space-y-1">
             <Label>{t.settings.restTimer}</Label>
             <Input
